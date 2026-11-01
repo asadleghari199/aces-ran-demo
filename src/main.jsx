@@ -62,7 +62,7 @@ function App(){
  {SITES.map((s,i)=><g key={s.id}>
  <circle cx={s.x} cy={s.y} r={coverageRadius(i,faults)} className="coverageCircle" fill={overlay==='Cells'?'none':`url(#${['blue','orange','purple'][i]})`} stroke={s.color} strokeWidth="1.5" strokeDasharray="7 7" strokeOpacity=".65" opacity={faults.outage.enabled&&faults.outage.target===i?.25:1}/>
  {/* v1.3: actual radio product image replaces the original antenna-tower path. */}
- <image href="/small-cell.png" x={s.x-28} y={s.y-28} width="56" height="56" preserveAspectRatio="xMidYMid meet" opacity={faults.outage.enabled&&faults.outage.target===i?.35:1} style={{pointerEvents:'none'}}/>
+ <image href="/small-cell.png.PNG" x={s.x-28} y={s.y-28} width="56" height="56" preserveAspectRatio="xMidYMid meet" opacity={faults.outage.enabled&&faults.outage.target===i?.35:1} style={{pointerEvents:'none'}}/>
  <text x={s.x} y={s.y+44} textAnchor="middle" fill="white" fontSize="14" fontWeight="700">{s.id}</text>
  <text x={s.x} y={s.y+59} textAnchor="middle" fill={s.color} fontSize="11">{faults.outage.enabled&&faults.outage.target===i?'OFFLINE':`PCI ${s.pci}`}</text>
  </g>)}
