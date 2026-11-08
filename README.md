@@ -1,45 +1,27 @@
-# ACES 5G RAN Fault Injection & Performance Analyzer
+# RAN PULSE — 9 Small Cells / 3 Logical Cells
 
-A **frontend-only**, interactive, three-cell 5G RAN fault visualization demo. No backend, SDR, or srsRAN installation required.
+## Confirmed architecture
 
-## Features
-- Three gNBs with distinct PCIs and ten selectable UEs
-- Network topology and conceptual radio-coverage display
-- Fault scenarios: interference, gNB power reduction, congestion, outage
-- Fault severity and target gNB selection
-- Per-UE RSRP, SINR, CQI, MCS, BLER, throughput and PRB utilization
-- KPI time-series charts, cell summaries, event log, scenario comparison
-- Pause/start, reset, and CSV KPI export
+- Nine physical small-cell radio heads; three synchronized heads per EU.
+- Three logical cells, one PCI and one PRB pool per EU: PCI 10, 20, 30 (illustrative IDs).
+- All nine heads transmit on the same carrier; frequency reuse 1.
+- One shared 5G Core, one Fronthaul Gateway, three AUs, three EUs.
+- Main view: nine radio heads, UEs and group-colored coverage.
+- Transport Topology tab: core, gateway, AU, EU, radio heads and editable illustrative link/transport KPIs.
 
-**Important:** This is a simplified illustrative radio model, not an accurate system-level 3GPP simulator. It does not use live srsRAN or Open5GS metrics. The geometry is conceptual; interference, PRB load and throughput use simplified assumptions. Do not use outputs for network planning or performance guarantees.
+## Simulation assumptions
 
-## Local development
-Install Node.js 20.19+ or 22.12+ (compatible with Vite 6), then:
+- Within each logical cell, received power from the three heads is combined **non-coherently in linear mW**. This is a simplified approximation, not phase-aware distributed transmission.
+- UE association uses the strongest *combined logical-cell received power*. The displayed serving small cell is the strongest individual head in the selected logical cell.
+- Other logical cells contribute co-channel interference; default effective activity factor is 0.08. Interference fault increases activity for a target EU group.
+- One shared PRB pool per EU (273 PRBs default). UE demand is allocated within that pool; aggregate allocated PRBs never exceed the pool. Congestion targets the selected EU group.
+- Small-cell outage and power backoff affect a selected physical head only.
+- RF distribution attenuation defaults to **zero** because digital eCPRI transport does not inherently subtract dB from RF RSRP. Optional RF attenuation inputs are only illustrative equivalent analog losses.
+- Transport latency and packet loss are separate metrics; throughput is a simplified estimate rather than a 3GPP PHY/MAC scheduler output.
+- No protocol-level eCPRI/5GC, HARQ, synchronized coherent combining, real packet forwarding or RRC handover is implemented.
 
-```bash
-npm install
-npm run dev
-```
+## Deploy
 
-Open the localhost URL shown in the terminal.
+Replace `src/main.jsx` and `src/style.css` in the existing GitHub repo. Keep `public/ACES-logo.png` and `public/small-cell.png.PNG` unchanged.
 
-## Deploy to Vercel (GitHub)
-1. Create a GitHub repository and upload **the contents of this folder** (package.json at repository root).
-2. Log in at https://vercel.com and select **Add New → Project**.
-3. Import the GitHub repository. Framework should detect **Vite**.
-4. Confirm build command `npm run build` and output directory `dist`.
-5. Select **Deploy**. Vercel will provide a public HTTPS URL.
-6. To remove the temporary demo later, delete the project in Vercel project settings (or disable its deployment as appropriate).
-
-## Deploy to Vercel (CLI)
-```bash
-npm install
-npm run build
-npx vercel
-npx vercel --prod
-```
-
-Follow the Vercel authentication and project prompts. You must have a Vercel account and permission to deploy.
-
-## Technology
-React 18, Vite 6, Recharts, Lucide React. Entirely client-side; no environment variables, database, or secrets.
+Run `npm install` then `npm run build` to validate locally. A full Vite production build could not be executed in the generation environment because npm dependencies were not available; JSX syntax was independently parsed using TypeScript.
