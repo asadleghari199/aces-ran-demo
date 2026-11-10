@@ -88,3 +88,71 @@ main>.controls,main>.topology,main>.details{align-self:stretch}
 .fanStem{align-self:center;margin-top:0}
 .smallCellNodes{align-self:flex-start;margin-top:18px}
 .smallCellFan:after{content:'';position:absolute;left:21px;top:18px;height:calc(50% - 18px);width:2px;background:var(--branch)}
+
+/* v1.5 — ACES white corporate design. Navy/red accents and CSS-only divider. */
+:root{color:#1d305f;background:#f5f7fa;color-scheme:light}
+body,.app{background:#f5f7fa;color:#1d305f}
+header{background:#fff;border-bottom:0;position:relative;padding-bottom:20px;box-shadow:0 2px 12px #1d305f0c}
+header:after,nav:after{content:"";position:absolute;bottom:0;left:0;right:0;height:8px;background:repeating-linear-gradient(90deg,#ed2638 0 10px,transparent 10px 15px) top left/100% 3px no-repeat,repeating-linear-gradient(90deg,#1d305f 0 10px,transparent 10px 15px) bottom left/100% 3px no-repeat}
+.heading strong{color:#1d305f}.heading small{color:#576a85}.brand{border-right-color:#dbe2ed}
+.toolbar button,.secondary{background:#fff;color:#1d305f;border-color:#cbd5e1}
+.toolbar button.primary{background:#1d305f;border-color:#1d305f;color:#fff}
+.timer{border-color:#d4deea;color:#60738e}.timer b{color:#1d305f}
+nav{position:relative;background:#fff;border-bottom:0;padding-bottom:8px}
+nav button{color:#1d305f}nav button.active{background:#f0f3f8;color:#1d305f;border-color:#ed2638}
+.panel,.transportCard{background:#fff;border:1px solid #d6dfe9;box-shadow:0 2px 10px #1d305f0b;color:#1d305f}
+.panelTitle{background:#1d305f;color:white;border-bottom:3px solid #ed2638}
+.panelTitle.section{border-top-color:#dbe3ed}.activeCount{color:#fff}
+.faultCard,.fault{background:#f7f9fc;border-color:#d9e1eb;color:#1d305f}
+.faultCard.enabled,.fault.selected{background:#fff4f5;border-color:#ed2638}
+.faultText b,.fault b{color:#1d305f}.faultText small,.fault small,.hint{color:#60738e}
+.faultIcon{color:#1d305f}.controls label{color:#1d305f}
+.controls select,.details select{background:#fff;color:#1d305f;border-color:#cbd5e1}
+.controls input,.controls .faultToggle input[type=checkbox]{accent-color:#ed2638}
+.faultConfig{border-top-color:#dce4ed}.outageNote{color:#b32735}
+.seg button{background:#e9eef5;color:#1d305f;border-color:#d4deea}.seg button.on{background:#ed2638;border-color:#ed2638;color:#fff}
+.map{background:#f8fafc}.mapLabel{color:#526581;background:#fffffff0;border:1px solid #e0e6ee}
+.metric{border-bottom-color:#e3e9f0}.metric span{color:#526581}.metric b{color:#1d305f}
+.details .status{color:#008a65}.chartGrid,.analysisGrid{background:#e0e6ee}.chartPanel{background:#fff}
+.cellSummary th,.tableWrap th{background:#eef2f7;color:#1d305f}
+.cellSummary td,.cellSummary th,.tableWrap td,.tableWrap th{border-color:#dce4ed}
+.tableWrap tbody tr:hover{background:#f1f5fa}.eventList>div,.comparison>div{border-bottom-color:#e1e7ef}
+.eventList span,.comparison span,.comparison p{color:#64748b}.textBtn,.info{color:#1d305f}
+footer{color:#64748b}.transportHeading h2{color:#1d305f}.transportHeading p{color:#5d708b}
+.architecture{background:#fff;border-color:#d6dfe9}
+.equipment{color:#1d305f}.equipment small{color:#526581}
+.equipmentFallback{background:#edf2f8;border-color:#c5d1df;color:#1d305f}
+.architectureRow>.equipment,.smallCellNode .equipment{background:#fff;border-color:var(--branch)}
+.architectureRow{border-bottom-color:#e0e6ee}
+.architectureRowStats{color:#425979}.architectureLegend,.architectureLegend code{color:#657892}
+.transportCard h3{color:#1d305f}.transportCard h3 span{color:#687c96}
+.transportCard label{border-bottom-color:#e3e9f0;color:#1d305f}
+.transportCard label input{background:#fff;border-color:#cbd5e1;color:#1d305f}
+.transportCard label span,.transportCard p{color:#667a94}
+.transportTotal{color:#1d305f}.transportTotal strong{color:#c71d31}
+.architectureShared>.flowWire,.trunkIncoming,.trunkVertical{background:#1d305f}
+
+/* Vertical, unlimited small-cell list in each horizontal AU/EU branch.
+   Each SC has its own continuous horizontal connection to the EU distribution bus. */
+.architectureFlow{grid-template-columns:minmax(145px,190px) 54px minmax(800px,1fr);min-width:1120px}
+.architectureRows{display:flex;flex-direction:column}
+.architectureRow{grid-template-columns:minmax(175px,1fr) 30px minmax(175px,1fr) minmax(250px,1.35fr);min-height:390px;padding:24px 12px 48px}
+.smallCellFan{height:auto;min-height:330px;align-self:stretch;align-items:center;padding:0;position:relative}
+.smallCellFan:after{display:none}
+.fanStem{height:2px;width:26px;align-self:center;margin:0;z-index:1}
+.smallCellNodes{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:14px;align-self:stretch;margin:0;position:relative;padding:10px 0 10px 28px}
+.smallCellNodes:before{content:"";display:block;position:absolute;top:calc(10px + 43px);bottom:calc(10px + 43px);left:40px;right:auto;width:2px;height:auto;background:var(--branch)}
+.smallCellNode{display:flex;flex-direction:row;align-items:center;min-width:0;position:relative}
+.smallCellWire{height:2px;width:16px;margin:0;background:var(--branch);flex:none}
+.smallCellNode .equipment{width:100%;min-height:94px;padding:6px;display:flex;flex-direction:row;gap:14px;text-align:left;justify-content:flex-start}
+.smallCellNode .equipmentVisual{height:72px;width:90px;flex:none}
+.smallCellNode .equipmentVisual img{max-height:70px;max-width:88px}
+.smallCellNode .equipment strong{font-size:13px}
+.architectureRowStats{bottom:12px}
+@media(max-width:740px){.architectureFlow{min-width:1020px}.architectureRow{grid-template-columns:165px 25px 165px 285px}.smallCellNode .equipment{min-height:88px}}
+
+.smallCellFan:before{content:"";position:absolute;left:26px;right:auto;top:50%;width:14px;height:2px;background:var(--branch)}
+/* Align distribution trunk with the short branch to each SC. */
+.smallCellNodes{padding-left:0}
+.smallCellNodes:before{left:12px}
+.smallCellFan:before{width:12px}
