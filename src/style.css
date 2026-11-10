@@ -212,3 +212,32 @@ main > .topology {
   aspect-ratio: 670 / 620;
   min-height: 0;
 }
+
+/* v1.7 — Compact Network View grid: prevent side panels from
+   setting an unnecessarily tall first row and pushing KPI charts down. */
+@media (min-width: 1151px) {
+  main > .controls {
+    align-self: start;
+    height: fit-content;
+  }
+
+  main > .details {
+    align-self: start;
+    max-height: clamp(440px, 46vw, 720px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  main > .charts {
+    grid-column: 1 / span 2;
+    align-self: start;
+  }
+}
+
+/* At tablet/mobile widths, retain the original stacked flow. */
+@media (max-width: 1150px) {
+  main > .details {
+    max-height: none;
+    overflow: visible;
+  }
+}
