@@ -200,3 +200,15 @@ nav button.active {
   background: linear-gradient(180deg, #fff 0%, #e8eef7 100%);
   box-shadow: 0 2px 6px rgba(29,48,95,.08);
 }
+
+
+/* Network View: keep coverage panel fitted to its map, not the taller side panels. */
+main > .topology {
+  align-self: start;
+}
+
+.map {
+  height: auto;
+  aspect-ratio: 670 / 620;
+  min-height: 0;
+}
