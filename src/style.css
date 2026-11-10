@@ -26,3 +26,65 @@
 
 /* Distributed small-cell transport view */
 .transportPage{padding:18px;max-width:1600px;margin:auto}.transportHeading h2{font-size:21px;margin:0 0 5px}.transportHeading p{font-size:12px;color:#9ab9d4;margin:0 0 20px}.architecture{padding:22px 15px;border:1px solid #315474;background:#091e35;border-radius:12px;text-align:center}.architectureCore,.architectureGateway{max-width:330px;margin:auto;border:1px solid #39c8eb;background:#103655;border-radius:10px;padding:14px;color:#fff;font-weight:800}.architectureGateway{border-color:#478df3}.architectureCore small,.architectureGateway small,.architectureNode small{display:block;font-size:11px;color:#a8c6df;font-weight:400;margin-top:5px}.architectureStem{height:25px;width:2px;background:#56b9ed;margin:auto}.architectureBranches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.architectureBranch{min-width:0;display:flex;flex-direction:column;align-items:center}.architectureLine{height:28px;width:2px;background:var(--branch)}.architectureNode{border:1px solid var(--branch);background:#112b46;padding:12px 7px;width:85%;border-radius:9px;font-weight:800}.architectureCells{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}.architectureCell{background:#0d2a46;border:1px solid var(--branch);border-radius:9px;padding:10px 3px;display:flex;flex-direction:column;align-items:center;gap:4px}.architectureCell img{width:54px;height:54px;object-fit:contain}.architectureCell strong{font-size:12px}.architectureCell small{font-size:10px;color:#65e7b8}.architectureCell.offline{opacity:.35}.architectureCell.offline small{color:#ff8b8b}.branchStats{font-size:12px;color:#b8d5ef;padding-top:13px}.transportColumns{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.transportCard{background:#091e35;border:1px solid #315474;border-radius:10px;padding:18px}.transportCard h3{margin:0 0 15px;font-size:16px}.transportCard h3 span{float:right;color:#80b9e4;font-size:11px;font-weight:400}.transportCard label{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:7px 0;border-bottom:1px solid #203e5a;font-size:12px}.transportCard label input{margin-left:auto;width:90px;padding:6px;border-radius:5px;background:#112c48;border:1px solid #426481;color:white;text-align:right}.transportCard label span{width:38px;color:#8eb2d0}.transportTotal{display:flex;justify-content:space-between;padding:15px 0;color:#d6eafa;font-size:13px}.transportTotal strong{color:#65dbff}.transportCard p{font-size:11px;line-height:1.6;color:#91b0cb;margin:0}@media(max-width:800px){.architectureBranches{gap:6px}.architectureNode{width:100%;font-size:12px}.architectureCells{gap:3px}.architectureCell{padding:7px 1px}.architectureCell img{width:35px;height:35px}.architectureCell strong{font-size:10px}.transportColumns{grid-template-columns:1fr}.branchStats{font-size:10px}}
+
+/* v1.4: horizontal equipment topology with continuous branching lines */
+.architectureHorizontal{overflow-x:auto;text-align:left;padding:24px 18px}
+.architectureFlow{display:grid;grid-template-columns:minmax(130px,175px) 52px minmax(760px,1fr);align-items:stretch;min-width:1030px;gap:0}
+.architectureShared{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:0}
+.equipment{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;text-align:center;color:#eaf4ff}
+.equipmentVisual{height:72px;width:100%;display:flex;align-items:center;justify-content:center}
+.equipmentVisual img{max-height:70px;max-width:100%;width:auto;height:auto;object-fit:contain}
+.equipmentFallback{display:flex;align-items:center;justify-content:center;width:80%;height:60px;border:1px dashed #476d8f;border-radius:8px;color:#6daee1;background:#102b45}
+.equipment strong{font-size:12px;white-space:nowrap}
+.equipment small{font-size:10px;color:#a8c8df;white-space:nowrap}
+.flowWire{display:block;flex:none;background:#4ba6d9}
+.architectureShared>.flowWire{width:2px;height:38px;margin:7px auto}
+.architectureTrunk{position:relative;min-height:100%;}
+.trunkIncoming{position:absolute;top:50%;left:0;right:50%;height:2px;background:#4ba6d9}
+.trunkVertical{position:absolute;top:16.666%;bottom:16.666%;left:50%;width:2px;background:#4ba6d9}
+.trunkOutgoing{position:absolute;left:50%;right:0;height:2px;background:var(--branch)}
+.trunkOutgoing:nth-of-type(3){top:16.666%}.trunkOutgoing:nth-of-type(4){top:50%}.trunkOutgoing:nth-of-type(5){top:83.333%}
+.architectureRows{display:grid;grid-template-rows:repeat(3,minmax(190px,auto));gap:0}
+.architectureRow{position:relative;display:grid;grid-template-columns:minmax(120px,1fr) 28px minmax(125px,1fr) minmax(330px,2.5fr);align-items:center;padding:20px 10px 36px;border-bottom:1px solid #294664;gap:0}
+.architectureRow:last-child{border-bottom:0}
+.architectureRow>.equipment{border:1px solid var(--branch);background:#102a43;border-radius:9px;padding:8px 5px;min-height:115px}
+.architectureRow>.flowWire{width:100%;height:2px;background:var(--branch)}
+.smallCellFan{height:100%;display:flex;align-items:center;position:relative;min-width:0}
+.fanStem{width:22px;height:2px;background:var(--branch);flex:none}
+.smallCellNodes{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:center;flex:1;min-width:0}
+.smallCellNodes:before{content:'';position:absolute;left:16.666%;right:16.666%;top:0;height:2px;background:var(--branch)}
+.smallCellNode{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+.smallCellWire{height:16px;width:2px;background:var(--branch);margin:auto}
+.smallCellNode .equipment{border:1px solid var(--branch);border-radius:8px;background:#0e2945;padding:6px 3px;min-height:103px}
+.smallCellNode .equipmentVisual{height:54px}.smallCellNode .equipmentVisual img{max-height:52px}
+.smallCellNode.offline{opacity:.4}.smallCellNode.offline .equipment small{color:#ff8b8b}
+.architectureRowStats{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:11px;color:#a9d3f1}
+.architectureLegend{font-size:10px;color:#90afc8;margin-top:16px;text-align:center}
+.architectureLegend code{color:#b7d9f0}
+/* v1.4: fit network SVG to panel, avoid letterboxing and clipped KPI content */
+main{align-items:start}
+main>.controls,main>.topology,main>.details{align-self:stretch}
+.map{height:auto;aspect-ratio:640/540;min-height:0;max-height:none}
+.map svg{width:100%;height:100%;display:block}
+.details{overflow:visible}
+.details .metric{padding:9px 0}
+.details .metric span{min-width:0}
+.details .metric b{text-align:right;white-space:nowrap}
+@media(min-width:1151px){main{grid-template-columns:minmax(245px,280px) minmax(0,1fr) minmax(295px,320px)}.topology{min-width:0}}
+@media(max-width:1150px){.map{aspect-ratio:640/540}.details{grid-column:1/3}}
+@media(max-width:740px){.map{aspect-ratio:640/540;min-height:0}.details{overflow:visible}.architectureHorizontal{padding:14px 8px}}
+
+/* Branch line aligns with the three vertical small-cell drops. */
+.smallCellFan{align-items:flex-start;padding-top:18px}
+.fanStem{margin-top:0}
+.smallCellNodes{align-items:start}
+.smallCellNodes:before{top:0}
+.smallCellNode{justify-content:flex-start}
+.map{aspect-ratio:670/620}
+@media(max-width:1150px){.map{aspect-ratio:670/620}}
+@media(max-width:740px){.map{aspect-ratio:670/620}}
+/* Elbow connector: EU output at midline, fan-out bus above the three heads. */
+.smallCellFan{align-items:center;padding-top:0}
+.fanStem{align-self:center;margin-top:0}
+.smallCellNodes{align-self:flex-start;margin-top:18px}
+.smallCellFan:after{content:'';position:absolute;left:21px;top:18px;height:calc(50% - 18px);width:2px;background:var(--branch)}
