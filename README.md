@@ -25,3 +25,9 @@
 Replace `src/main.jsx` and `src/style.css` in the existing GitHub repo. Keep `public/ACES-logo.png` and `public/small-cell.png.PNG` unchanged.
 
 Run `npm install` then `npm run build` to validate locally. A full Vite production build could not be executed in the generation environment because npm dependencies were not available; JSX syntax was independently parsed using TypeScript.
+
+## v1.4 interface update
+- Horizontal transport topology: shared Core → FHGW → three color-coded AU/EU branches → nine small cells.
+- Add optional equipment images to `public/`: `5g-core.png`, `fhgw.png`, `au.png`, `eu.png`. Until added, an equipment icon is displayed.
+- Repaired branching connectors, improved network map fit and visibility of the Selected UE panel.
+- Existing small-cell image remains `public/small-cell.png.PNG`.
