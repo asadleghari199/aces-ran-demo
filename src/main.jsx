@@ -12,7 +12,7 @@ const SITES=[
  {x:225,y:365},{x:360,y:375},{x:320,y:490}
 ].map((p,i)=>({...p,id:`SC-${String(i+1).padStart(2,'0')}`,group:Math.floor(i/3),pci:GROUPS[Math.floor(i/3)].pci,color:GROUPS[Math.floor(i/3)].color}));
 const DEFAULT_TRANSPORT={fiberLoss:0,connectorLoss:0,splitterLoss:0,euInsertion:0,auInsertion:0,fhgwLatency:0.15,auLatency:0.10,euLatency:0.08,packetLoss:0,groupCapacity:273};
-const INITIAL_UE=[{x:90,y:70},{x:220,y:75},{x:95,y:230},{x:305,y:210},{x:550,y:75},{x:470,y:245},{x:575,y:220},{x:225,y:340},{x:405,y:345},{x:320,y:490}].map((p,i)=>({...p,id:`UE-${String(i+1).padStart(2,'0')}`}));
+const INITIAL_UE=[{x:90,y:70},{x:220,y:75},{x:95,y:230},{x:305,y:210},{x:550,y:75},{x:470,y:245},{x:575,y:220},{x:225,y:340},{x:405,y:345},{x:475,y:475}].map((p,i)=>({...p,id:`UE-${String(i+1).padStart(2,'0')}`}));
 const FAULTS=[
 {id:'interference',label:'Inter-cell Interference',desc:'Extra interference from neighboring cells',icon:'◉',unit:'dB',max:25,defaultValue:8},
 {id:'power',label:'Transmit Power Reduction',desc:'Target small-cell transmit power backoff',icon:'↘',unit:'dB',max:30,defaultValue:6},
