@@ -313,3 +313,8 @@ main.networkMain .networkLeft>.alarmPanel .eventList{max-height:280px;overflow-y
 main:not(.networkMain)>.networkLeft,main:not(.networkMain)>.networkRight,main:not(.networkMain) .networkTop{display:contents}
 @media(max-width:1150px){main.networkMain{grid-template-columns:1fr}main.networkMain .networkRight{grid-row:auto}main.networkMain .networkTop{grid-template-columns:minmax(220px,280px) minmax(0,1fr)}}
 @media(max-width:740px){main.networkMain .networkTop{grid-template-columns:1fr}main.networkMain .networkLeft,main.networkMain .networkRight{width:100%}}
+/* SC Table: consistent with the existing UE Table */
+.scTableWrap th,.scTableWrap td{white-space:nowrap}
+.scTableWrap .scOnline{color:#008a65;font-weight:700}
+.scTableWrap .scOffline{color:#d22b3d;font-weight:700}
+.scTableNote{font-size:12px;color:#60738e;line-height:1.5;margin:14px 4px 4px}
