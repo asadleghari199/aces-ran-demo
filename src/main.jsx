@@ -107,7 +107,7 @@ function TransportTopology({transport,setTransport,summary,all,faults}){
   <div className="transportHeading"><h2>Transport & Distributed Small-Cell Topology</h2><p>One shared 5G Core · three logical cells (unique PCIs) · three synchronized heads per EU · common carrier · no UEs shown</p></div>
   <div className="architecture architectureHorizontal">
    <div className="architectureFlow">
-    <div className="architectureShared"><Equipment src="/5g-core.png" label="5G CORE" subtitle="Shared 5GC"/><span className="flowWire"/><Equipment label="CU" subtitle="Central Unit"/><span className="flowWire"/><Equipment label="DU" subtitle="Distributed Unit"/><span className="flowWire"/><Equipment src="/fhgw.png" label="FHGW" subtitle="Fronthaul Gateway"/></div>
+    <div className="architectureShared"><Equipment src="/5g-core.png" label="5G CORE" subtitle="Shared 5GC"/><span className="flowWire"/><Equipment src="/server.png" label="CU" subtitle="Central Unit"/><span className="flowWire"/><Equipment src="/server.png" label="DU" subtitle="Distributed Unit"/><span className="flowWire"/><Equipment src="/fhgw.png" label="FHGW" subtitle="Fronthaul Gateway"/></div>
     <div className="architectureTrunk" aria-hidden="true"><span className="trunkIncoming"/><span className="trunkVertical"/>{GROUPS.map(g=><span key={g.id} className="trunkOutgoing" style={{'--branch':g.color}}/>)}</div>
     <div className="architectureRows">{GROUPS.map((g,gi)=>{
      const sites=SITES.filter(s=>s.group===gi);
