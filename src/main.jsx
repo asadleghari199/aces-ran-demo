@@ -63,8 +63,8 @@ function calculate(ue,faults,tick,transport=DEFAULT_TRANSPORT,activity=[.5,.5,.5
   if(active('outage')&&target('outage')===i)return -200;
   const dist=Math.max(18,Math.hypot(ue.x-s.x,ue.y-s.y));
   // Slow shadowing (3 dB) + fast correlated fading (0.9 dB).
-  const shadow=3*correlated(10000+ueIndex*19+i,t,.975);
-  const fast=.9*correlated(20000+ueIndex*19+i,t,.46);
+  const shadow=3*correlated(10000+ueIndex*19+i,tick,.975);
+  const fast=.9*correlated(20000+ueIndex*19+i,tick,.46);
   return -42-31*Math.log10(dist/20)+shadow+fast-rfLoss-(active('power')&&target('power')===i?val('power'):0);
  });
  const groupMw=GROUPS.map((_,gi)=>SITES.reduce((sum,s,i)=>sum+(s.group===gi&&powers[i]>-180?dbmToMw(powers[i]):0),0));
