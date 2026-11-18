@@ -302,3 +302,14 @@ main > .topology {
  main.networkMain > .charts{order:5;}
  main.networkMain > .alarmPanel{order:6;}
 }
+
+/* v2.1: Independent left and right dashboard columns remove tall implicit grid rows. */
+main.networkMain{display:grid;grid-template-columns:minmax(0,1fr) minmax(315px,355px);gap:12px;align-items:start}
+main.networkMain>.networkLeft,main.networkMain>.networkRight{min-width:0;display:flex;flex-direction:column;gap:12px;align-self:start}
+main.networkMain .networkTop{display:grid;grid-template-columns:minmax(245px,280px) minmax(0,1fr);gap:12px;align-items:start}
+main.networkMain .networkTop>.controls,main.networkMain .networkTop>.topology{grid-column:auto;grid-row:auto;align-self:start;min-width:0;height:auto}
+main.networkMain .networkLeft>.charts,main.networkMain .networkLeft>.alarmPanel,main.networkMain .networkRight>.cellSummary,main.networkMain .networkRight>.details{grid-column:auto;grid-row:auto;max-height:none;max-width:none;overflow:visible;align-self:start;width:100%;margin:0}
+main.networkMain .networkLeft>.alarmPanel .eventList{max-height:280px;overflow-y:auto}
+main:not(.networkMain)>.networkLeft,main:not(.networkMain)>.networkRight,main:not(.networkMain) .networkTop{display:contents}
+@media(max-width:1150px){main.networkMain{grid-template-columns:1fr}main.networkMain .networkRight{grid-row:auto}main.networkMain .networkTop{grid-template-columns:minmax(220px,280px) minmax(0,1fr)}}
+@media(max-width:740px){main.networkMain .networkTop{grid-template-columns:1fr}main.networkMain .networkLeft,main.networkMain .networkRight{width:100%}}
