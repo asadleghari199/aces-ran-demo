@@ -12,6 +12,7 @@ const SITES=[
  {x:225,y:365},{x:360,y:375},{x:320,y:490}
 ].map((p,i)=>({...p,id:`SC-${String(i+1).padStart(2,'0')}`,group:Math.floor(i/3),pci:GROUPS[Math.floor(i/3)].pci,color:GROUPS[Math.floor(i/3)].color}));
 const DEFAULT_TRANSPORT={fiberLoss:0,connectorLoss:0,splitterLoss:0,euInsertion:0,auInsertion:0,fhgwLatency:0.15,auLatency:0.10,euLatency:0.08,packetLoss:0,groupCapacity:273};
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 // Stable, evenly distributed UE positions. Each site receives at least 3 UEs.
 const MIN_UES=27, DEFAULT_UES=36, MAX_UES=90;
 const UE_POOL=Array.from({length:MAX_UES},(_,i)=>{
@@ -29,7 +30,6 @@ const FAULTS=[
 ];
 const initialFaults=()=>Object.fromEntries(FAULTS.map(f=>[f.id,{enabled:false,value:f.defaultValue,target:1}]));
 const dbmToMw=dbm=>10**(dbm/10);
-const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 // Three synchronized, same-frequency heads per logical cell; one PCI and PRB pool per EU.
 // Powers combine non-coherently in linear units (illustrative distributed-radio model).
 function calculate(ue,faults,tick,transport=DEFAULT_TRANSPORT){
