@@ -265,3 +265,40 @@ main > .topology {
 .equipment strong{font-size:11px}
 .equipment small{font-size:9px}
 .architectureRowStats{font-size:10px;bottom:5px}
+
+/* Adjustable UE population in Network View */
+.ueCountControl{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;padding:12px 16px;margin:10px 12px 0;border:1px solid #dbe5f2;border-radius:10px;background:#f7faff;color:#20375c;font-size:13px}
+.ueCountControl label{display:flex;gap:12px;align-items:center;font-weight:600}
+.ueCountControl strong{color:#1765cb}
+.ueCountControl input[type=range]{flex:1;min-width:150px;accent-color:#1765cb}
+.ueCountControl span{font-size:11px;color:#61738d}
+
+
+/* v2.0: Network dashboard – aggregate KPI cards above selected UE details. */
+@media (min-width: 1151px) {
+ main.networkMain {grid-template-columns:minmax(245px,280px) minmax(0,1fr) minmax(315px,355px);align-items:start;}
+ main.networkMain > .controls {grid-column:1;grid-row:1;}
+ main.networkMain > .topology {grid-column:2;grid-row:1;}
+ main.networkMain > .cellSummary {grid-column:3;grid-row:1;align-self:start;}
+ main.networkMain > .details {grid-column:3;grid-row:2;max-height:none;overflow:visible;align-self:start;}
+ main.networkMain > .charts {grid-column:1 / span 2;grid-row:2;align-self:start;}
+ main.networkMain > .alarmPanel {grid-column:1 / span 2;grid-row:3;align-self:start;max-width:440px;}
+}
+.networkMiniGrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#dce5f0;}
+.networkMiniGrid .chartPanel{padding:8px 6px 4px;min-width:0;}
+.networkMiniGrid .chartHead{font-size:10px;gap:4px;flex-wrap:wrap;}
+.networkMiniGrid .chartHead b{font-size:12px;white-space:nowrap;}
+.networkMiniGrid .chartPanel .recharts-responsive-container{height:96px!important;}
+.networkSummaryFoot{font-size:11px;text-align:center;padding:9px 5px;color:#64748b;background:#f7f9fc;}
+@media (min-width:741px) and (max-width:1150px){
+ main.networkMain > .cellSummary{grid-column:2;grid-row:2;}
+ main.networkMain > .details{grid-column:1;grid-row:2;}
+ main.networkMain > .charts{grid-column:1 / span 2;grid-row:3;}
+ main.networkMain > .alarmPanel{grid-column:1 / span 2;grid-row:4;}
+}
+@media (max-width:740px){
+ main.networkMain > .cellSummary{order:3;}
+ main.networkMain > .details{order:4;}
+ main.networkMain > .charts{order:5;}
+ main.networkMain > .alarmPanel{order:6;}
+}
