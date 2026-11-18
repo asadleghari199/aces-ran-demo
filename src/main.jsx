@@ -30,59 +30,87 @@ const FAULTS=[
 ];
 const initialFaults=()=>Object.fromEntries(FAULTS.map(f=>[f.id,{enabled:false,value:f.defaultValue,target:1}]));
 const dbmToMw=dbm=>10**(dbm/10);
-// Three synchronized, same-frequency heads per logical cell; one PCI and PRB pool per EU.
-// Powers combine non-coherently in linear units (illustrative distributed-radio model).
-function calculate(ue,faults,tick,transport=DEFAULT_TRANSPORT){
+// Seeded, reproducible stochastic innovations. No Math.random() in React render.
+const hash01=(seed)=>{let x=(seed|0)>>>0;x=Math.imul(x^(x>>>16),0x7feb352d);x=Math.imul(x^(x>>>15),0x846ca68b);return ((x^(x>>>16))>>>0)/4294967296;};
+const gaussian=(key,t)=>Math.sqrt(-2*Math.log(Math.max(1e-9,hash01(key*1031+t*7919+17))))*Math.cos(2*Math.PI*hash01(key*8171+t*1543+91));
+// Stationary AR(1) constructed from a finite seeded innovation history.
+const correlated=(key,t,rho=.80)=>{let v=0,weight=Math.sqrt(1-rho*rho);for(let k=0;k<28;k++){v+=weight*gaussian(key,t-k)*Math.pow(rho,k);}return v;};
+const trafficDemand=(ueIndex,t,faults,group)=>{
+ const congestion=faults.congestion.enabled&&SITES[faults.congestion.target].group===group?faults.congestion.value/100:0;
+ // Bursty ON/OFF sessions plus correlated packet-demand fluctuations.
+ const session=Math.floor(t/12);
+ const on=hash01(ueIndex*311+session*67+13)>.24;
+ const baseline=on?25:5;
+ return clamp(Math.round(baseline+11*correlated(ueIndex+700,t,.77)+congestion*90),0,130);
+};
+// Activity is driven by the offered PRB demand in each shared EU pool.
+const groupActivity=(ues,t,faults,transport)=>{
+ const offered=[0,0,0];
+ ues.forEach((u,i)=>{
+  const closest=SITES.reduce((best,s,j)=>Math.hypot(u.x-s.x,u.y-s.y)<Math.hypot(u.x-SITES[best].x,u.y-SITES[best].y)?j:best,0);
+  const gi=SITES[closest].group;
+  offered[gi]+=trafficDemand(i,t,faults,gi);
+ });
+ return offered.map(v=>clamp(v/Math.max(1,transport.groupCapacity),.04,1));
+};
+// Three synchronized heads per EU; one PCI and one PRB pool per EU.
+// This is an illustrative system-level model, not a calibrated 3GPP PHY.
+function calculate(ue,faults,tick,transport=DEFAULT_TRANSPORT,activity=[.5,.5,.5],ueIndex=0){
  const active=id=>faults[id].enabled,val=id=>faults[id].value,target=id=>faults[id].target;
  const noise=dbmToMw(-105);
- // Optional equivalent analog RF distribution losses. Digital fronthaul does not cause RF dB loss.
  const rfLoss=transport.fiberLoss+transport.connectorLoss+transport.splitterLoss+transport.euInsertion+transport.auInsertion;
  const powers=SITES.map((s,i)=>{
   if(active('outage')&&target('outage')===i)return -200;
   const dist=Math.max(18,Math.hypot(ue.x-s.x,ue.y-s.y));
-  const fading=1.2*Math.sin(tick*.21+i*1.8+ue.x*.06);
-  return -42-31*Math.log10(dist/20)+fading-rfLoss-(active('power')&&target('power')===i?val('power'):0);
+  // Slow shadowing (3 dB) + fast correlated fading (0.9 dB).
+  const shadow=3*correlated(10000+ueIndex*19+i,t,.975);
+  const fast=.9*correlated(20000+ueIndex*19+i,t,.46);
+  return -42-31*Math.log10(dist/20)+shadow+fast-rfLoss-(active('power')&&target('power')===i?val('power'):0);
  });
  const groupMw=GROUPS.map((_,gi)=>SITES.reduce((sum,s,i)=>sum+(s.group===gi&&powers[i]>-180?dbmToMw(powers[i]):0),0));
  const servingGroup=groupMw.some(x=>x>0)?groupMw.indexOf(Math.max(...groupMw)):-1;
- const serving=servingGroup<0?-1:powers.reduce((best,p,i)=>SITES[i].group===servingGroup&&p>powers[best]||best<0&&SITES[i].group===servingGroup?i:best,-1);
+ const serving=servingGroup<0?-1:powers.reduce((best,p,i)=>SITES[i].group===servingGroup&&(best<0||p>powers[best])?i:best,-1);
  const signal=servingGroup<0?0:groupMw[servingGroup];
  const rsrp=signal>0?10*Math.log10(signal):-140;
- // Neighbor logical cells use the same carrier. Activity factor models overlapping PRBs.
  const interference=groupMw.reduce((sum,p,gi)=>{
   if(gi===servingGroup)return sum;
   const faultGroup=active('interference')?SITES[target('interference')].group:-1;
-  const factor=.08*(faultGroup===gi?10**(val('interference')/10):1);
+  const factor=.16*activity[gi]*(faultGroup===gi?10**(val('interference')/10):1);
   return sum+p*factor;
  },0);
  const sinr=servingGroup<0?-20:10*Math.log10(signal/(noise+interference));
  const cqi=servingGroup<0?0:clamp(Math.round((sinr+8)/2.2),0,15);
  const mcs=servingGroup<0?0:clamp(Math.round(cqi*1.8),0,27);
- const bler=servingGroup<0?100:clamp(25*Math.exp(-(sinr+3)/8),.1,100);
+ // Logistic BLER approximation, sensitive to selected MCS and SINR.
+ const threshold=-5+mcs*.68;
+ const bler=servingGroup<0?100:clamp(100/(1+Math.exp(clamp((sinr-threshold)/2.6,-30,30))),.1,100);
  const congestion=active('congestion')&&servingGroup===SITES[target('congestion')].group?val('congestion'):0;
- return{serving,servingGroup,rsrp,sinr,cqi,mcs,bler,congestion,prb:0,cellPrbUtil:0,allocatedPrbs:0,throughput:0,powers,groupPowers:groupMw.map(x=>x>0?10*Math.log10(x):-200)};
+ const demand=servingGroup<0?0:trafficDemand(ueIndex,tick,faults,servingGroup);
+ return {serving,servingGroup,rsrp,sinr,cqi,mcs,bler,congestion,demand,prb:0,cellPrbUtil:0,allocatedPrbs:0,throughput:0,powers,groupPowers:groupMw.map(x=>x>0?10*Math.log10(x):-200)};
 }
 const COVERAGE_BASE_RADIUS=95;
 const coverageRadius=(i,faults)=>COVERAGE_BASE_RADIUS*Math.pow(10,-(faults.power.enabled&&faults.power.target===i?faults.power.value:0)/31);
 function allocateResources(raw,transport){
  const result=raw.map(x=>({...x}));
  GROUPS.forEach((g,gi)=>{
-  const indices=result.map((r,i)=>r.servingGroup===gi?i:-1).filter(i=>i>=0);
+  const indices=result.map((r,i)=>r.servingGroup===gi&&r.rsrp>-105?i:-1).filter(i=>i>=0);
   const budget=transport.groupCapacity;
-  const demand=indices.map(i=>({i,prbs:Math.max(8,Math.round(35+result[i].congestion*.65))}));
+  const demand=indices.map(i=>({i,prbs:result[i].demand}));
   const totalDemand=demand.reduce((sum,x)=>sum+x.prbs,0);
   const scale=Math.min(1,budget/Math.max(1,totalDemand));
-  // Integer PRB assignment with guaranteed cell budget; distribute leftover by demand.
   const allocations=demand.map(d=>({...d,alloc:Math.floor(d.prbs*scale)}));
   let remaining=Math.max(0,budget-allocations.reduce((sum,x)=>sum+x.alloc,0));
+  // Largest-remainder apportionment, never exceeding individual demand or pool capacity.
+  allocations.sort((a,b)=>(b.prbs*scale-b.alloc)-(a.prbs*scale-a.alloc));
   for(const item of allocations){if(remaining<=0)break;if(item.alloc<item.prbs){item.alloc++;remaining--;}}
   const used=allocations.reduce((sum,x)=>sum+x.alloc,0);
   allocations.forEach(({i,alloc})=>{
    const r=result[i];r.allocatedPrbs=alloc;
-   r.prb=100*alloc/budget; // This UE's share of its EU's PRB pool.
+   r.prb=100*alloc/budget;
    r.cellPrbUtil=100*used/budget;
-   const efficiency=(r.mcs+1)/28;
-   r.throughput=Math.max(0,115*efficiency*(1-r.bler/100)*(alloc/budget)*(1-transport.packetLoss/100));
+   // Simplified effective PRB payload rate, bounded by MCS and BLER.
+   const spectralEfficiency=.25+5.3*(r.mcs/27);
+   r.throughput=Math.max(0,alloc*.36*spectralEfficiency*(1-r.bler/100)*(1-transport.packetLoss/100));
   });
  });
  return result;
@@ -102,7 +130,7 @@ function TransportTopology({transport,setTransport,summary,all,faults}){
   <div className="transportHeading"><h2>Transport & Distributed Small-Cell Topology</h2><p>One shared 5G Core · three logical cells (unique PCIs) · three synchronized heads per EU · common carrier · no UEs shown</p></div>
   <div className="architecture architectureHorizontal">
    <div className="architectureFlow">
-    <div className="architectureShared"><Equipment src="/5g-core.png" label="5G CORE" subtitle="Shared 5GC"/><span className="flowWire"/><Equipment label="CU" subtitle="Central Unit"/><span className="flowWire"/><Equipment label="DU" subtitle="Distributed Unit"/><span className="flowWire"/><Equipment src="/fhgw.png" label="FHGW" subtitle="Fronthaul Gateway"/></div>
+    <div className="architectureShared"><Equipment src="/5g-core.png" label="5G CORE" subtitle="Shared 5GC"/><span className="flowWire"/><Equipment src="/server.png" label="CU" subtitle="Central Unit"/><span className="flowWire"/><Equipment src="/server.png" label="DU" subtitle="Distributed Unit"/><span className="flowWire"/><Equipment src="/fhgw.png" label="FHGW" subtitle="Fronthaul Gateway"/></div>
     <div className="architectureTrunk" aria-hidden="true"><span className="trunkIncoming"/><span className="trunkVertical"/>{GROUPS.map(g=><span key={g.id} className="trunkOutgoing" style={{'--branch':g.color}}/>)}</div>
     <div className="architectureRows">{GROUPS.map((g,gi)=>{
      const sites=SITES.filter(s=>s.group===gi);
@@ -130,7 +158,7 @@ function App(){
  const[faults,setFaults]=useState(initialFaults),[running,setRunning]=useState(true),[tick,setTick]=useState(0),[selected,setSelected]=useState(3),[view,setView]=useState('Network View'),[history,setHistory]=useState([]),[networkHistory,setNetworkHistory]=useState([]),[events,setEvents]=useState([{t:0,level:'INFO',message:'Simulator initialized · 9 small cells / 3 EUs / 36 UEs'}]),[transport,setTransport]=useState(DEFAULT_TRANSPORT),[ueCount,setUeCount]=useState(DEFAULT_UES);
  useEffect(()=>{if(!running)return;const timer=setInterval(()=>setTick(t=>t+1),1000);return()=>clearInterval(timer)},[running]);
  const ues=useMemo(()=>UE_POOL.slice(0,ueCount),[ueCount]);
- const all=useMemo(()=>allocateResources(ues.map(u=>calculate(u,faults,tick,transport)),transport),[ues,faults,tick,transport]),current=all[Math.min(selected,ueCount-1)];
+ const all=useMemo(()=>{const activity=groupActivity(ues,tick,faults,transport);return allocateResources(ues.map((u,i)=>calculate(u,faults,tick,transport,activity,i)),transport)},[ues,faults,tick,transport]),current=all[Math.min(selected,ueCount-1)];
  useEffect(()=>{setHistory(h=>[...h,{t:tick,sinr:current.sinr,bler:current.bler,throughput:current.throughput,prb:current.prb}].slice(-35))},[tick,selected,faults]);
  // Aggregate network KPIs, independent of the currently selected UE.
  useEffect(()=>{
@@ -166,7 +194,7 @@ function App(){
  const changeFault=(id,patch)=>setFaults(old=>({...old,[id]:{...old[id],...patch}}));
  const toggleFault=(id,enabled)=>{changeFault(id,{enabled});const f=FAULTS.find(x=>x.id===id);record(enabled?'WARNING':'INFO',`${f.label} ${enabled?'enabled':'disabled'} on ${SITES[faults[id].target].id}`)};
  const clearFaults=()=>{setFaults(old=>Object.fromEntries(Object.entries(old).map(([id,f])=>[id,{...f,enabled:false}])));record('INFO','All faults disabled')};
- const reset=()=>{setFaults(initialFaults());setTransport(DEFAULT_TRANSPORT);setUeCount(DEFAULT_UES);setSelected(3);setTick(0);setHistory([]);setNetworkHistory([]);setEvents([{t:0,level:'INFO',message:'Simulation reset · 9 small cells / 3 EUs'}]);setRunning(true)};
+ const reset=()=>{lastNetworkState.current=null;setFaults(initialFaults());setTransport(DEFAULT_TRANSPORT);setUeCount(DEFAULT_UES);setSelected(3);setTick(0);setHistory([]);setNetworkHistory([]);setEvents([{t:0,level:'INFO',message:'Simulation reset · 9 small cells / 3 EUs'}]);setRunning(true)};
  const download=()=>{const rows=[['time_s','SINR_dB','BLER_pct','throughput_Mbps','PRB_pct'],...history.map(h=>[h.t,h.sinr.toFixed(2),h.bler.toFixed(2),h.throughput.toFixed(2),h.prb.toFixed(2)])];const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'}));a.download='aces-ran-kpis.csv';a.click();URL.revokeObjectURL(a.href)};
  const summary=SITES.map((s,i)=>{const group=all.filter(x=>x.serving===i);return{...s,count:group.length,rsrp:group.length?group.reduce((a,b)=>a+b.rsrp,0)/group.length:0,sinr:group.length?group.reduce((a,b)=>a+b.sinr,0)/group.length:0,prb:group.length?group.reduce((a,b)=>a+b.prb,0)/group.length:0,rate:group.reduce((a,b)=>a+b.throughput,0),online:!(faults.outage.enabled&&faults.outage.target===i)}});
  const networkCharts=<div className="networkMiniGrid">
@@ -180,7 +208,7 @@ function App(){
  <nav>{['Network View','Transport Topology','Performance Analysis','UE Table','Alarms & Events','Scenario Comparison'].map(v=><button className={view===v?'active':''} onClick={()=>setView(v)} key={v}>{v}</button>)}</nav>
  {view==='Transport Topology'?<TransportTopology transport={transport} setTransport={setTransport} summary={summary} all={all} faults={faults}/>:<main className={view==='Network View'?'networkMain':''}><div className="networkLeft"><div className="networkTop"><aside className="panel controls"><div className="panelTitle"><Settings2 size={16}/> RAN Fault Injection <span className="activeCount">{FAULTS.filter(f=>faults[f.id].enabled).length} active</span></div><div className="faults">{FAULTS.map(f=><div key={f.id} className={'faultCard '+(faults[f.id].enabled?'enabled':'')}><label className="faultToggle"><span className="faultIcon">{f.icon}</span><span className="faultText"><b>{f.label}</b><small>{f.desc}</small></span><input type="checkbox" checked={faults[f.id].enabled} onChange={e=>toggleFault(f.id,e.target.checked)} aria-label={'Enable '+f.label}/></label>{faults[f.id].enabled&&<div className="faultConfig"><label>Target Small Cell</label><select value={faults[f.id].target} onChange={e=>changeFault(f.id,{target:+e.target.value})}>{SITES.map((s,i)=><option value={i} key={s.id}>{s.id} ({GROUPS[s.group].id})</option>)}</select>{f.id!=='outage'?<><label>{f.id==='congestion'?'Additional load':'Fault magnitude'} <b>{faults[f.id].value} {f.unit}</b></label><input type="range" min="0" max={f.max} step="1" value={faults[f.id].value} onChange={e=>changeFault(f.id,{value:+e.target.value})}/></>:<p className="outageNote">Only this physical small cell is switched OFF; the other two heads in its EU remain active.</p>}</div>}</div>)}</div><div className="hint">Interference and congestion affect the target's entire logical cell (EU group); power reduction and outage affect one physical small cell. Same-group heads combine non-coherently; other groups interfere on the common carrier. Illustrative, not calibrated 3GPP results.</div><button className="secondary wide" onClick={clearFaults}>Disable All Faults</button></aside>
  <section className="panel topology"><div className="panelTitle split"><span><RadioTower size={16}/> {view==='Network View'?'Small-Cell Coverage & UE Association':view}</span></div>
- {view==='Network View'?<div className="map"><div className="ueCountControl"><label htmlFor="ue-count">Connected UE population <strong>{ueCount} UEs</strong></label><input id="ue-count" type="range" min={MIN_UES} max={MAX_UES} step="9" value={ueCount} onChange={e=>{const count=Number(e.target.value);setUeCount(count);setSelected(i=>Math.min(i,count-1));record('INFO',`UE population changed: ${count} UEs`);}}/><span>27 minimum · 3–10 UEs positioned near each small cell · 90 maximum</span></div><svg viewBox="-15 -15 670 620" role="img" aria-label="Nine small cells with ten selectable user devices"><defs><pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse"><path d="M 34 0 L 0 0 0 34" fill="none" stroke="#dce5ef" strokeWidth="1"/></pattern><radialGradient id="blue"><stop stopColor="#1797f2" stopOpacity=".46"/><stop offset="1" stopColor="#1797f2" stopOpacity="0"/></radialGradient><radialGradient id="orange"><stop stopColor="#f59e37" stopOpacity=".48"/><stop offset="1" stopColor="#f59e37" stopOpacity="0"/></radialGradient><radialGradient id="purple"><stop stopColor="#9d6dff" stopOpacity=".45"/><stop offset="1" stopColor="#9d6dff" stopOpacity="0"/></radialGradient></defs><rect width="640" height="540" fill="#f8fafc"/><rect width="640" height="540" fill="url(#grid)"/>
+ {view==='Network View'?<div className="map"><div className="ueCountControl"><label htmlFor="ue-count">Connected UE population <strong>{ueCount} UEs</strong></label><input id="ue-count" type="range" min={MIN_UES} max={MAX_UES} step="9" value={ueCount} onChange={e=>{const count=Number(e.target.value);setUeCount(count);setSelected(i=>Math.min(i,count-1));record('INFO',`UE population changed: ${count} UEs`);}}/><span>27 minimum · 3–10 UEs positioned near each small cell · 90 maximum</span></div><svg viewBox="-15 -15 670 620" role="img" aria-label="Nine small cells with adjustable UE population"><defs><pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse"><path d="M 34 0 L 0 0 0 34" fill="none" stroke="#dce5ef" strokeWidth="1"/></pattern><radialGradient id="blue"><stop stopColor="#1797f2" stopOpacity=".46"/><stop offset="1" stopColor="#1797f2" stopOpacity="0"/></radialGradient><radialGradient id="orange"><stop stopColor="#f59e37" stopOpacity=".48"/><stop offset="1" stopColor="#f59e37" stopOpacity="0"/></radialGradient><radialGradient id="purple"><stop stopColor="#9d6dff" stopOpacity=".45"/><stop offset="1" stopColor="#9d6dff" stopOpacity="0"/></radialGradient></defs><rect width="640" height="540" fill="#f8fafc"/><rect width="640" height="540" fill="url(#grid)"/>
  {SITES.map((s,i)=><g key={s.id}>
  <circle cx={s.x} cy={s.y} r={coverageRadius(i,faults)} className="coverageCircle" fill={`url(#${['blue','orange','purple'][s.group]})`} stroke={s.color} strokeWidth="1.5" strokeDasharray="7 7" strokeOpacity=".65" opacity={faults.outage.enabled&&faults.outage.target===i?.25:1}/>
  {/* v1.3: actual radio product image replaces the original antenna-tower path. */}
@@ -192,7 +220,7 @@ function App(){
  :view==='Performance Analysis'?charts
  :view==='UE Table'?<div className="tableWrap"><table><thead><tr>{['UE','Serving Small Cell','RSRP','SINR','CQI','MCS','BLER','DL Mbps'].map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{all.map((a,i)=><tr key={i} onClick={()=>{setSelected(i);setView('Network View')}}><td>{ues[i].id}</td><td>{SITES[a.serving]?.id??'None'}</td><td>{a.rsrp.toFixed(1)}</td><td>{a.sinr.toFixed(1)}</td><td>{a.cqi}</td><td>{a.mcs}</td><td>{a.bler.toFixed(1)}%</td><td>{a.throughput.toFixed(1)}</td></tr>)}</tbody></table></div>
  :view==='Alarms & Events'?<div className="eventList">{events.map((e,i)=><div key={i}><span>{String(Math.floor(e.t/60)).padStart(2,'0')}:{String(e.t%60).padStart(2,'0')}</span><b className={e.level==='WARNING'?'warning':'info'}>{e.level}</b>{e.message}</div>)}</div>
- :<div className="comparison"><h3>Healthy vs Current Scenario</h3><p>Selected UE: {ues[selected].id}</p>{['rsrp','sinr','bler','throughput'].map(k=>{const base=allocateResources(ues.map(u=>calculate(u,initialFaults(),tick,transport)),transport)[selected][k];return <div key={k}><span>{k.toUpperCase()}</span><b>{base.toFixed(1)} → {current[k].toFixed(1)}</b></div>})}</div>}</section>
+ :<div className="comparison"><h3>Healthy vs Current Scenario</h3><p>Selected UE: {ues[selected].id}</p>{['rsrp','sinr','bler','throughput'].map(k=>{const base=allocateResources(ues.map((u,i)=>calculate(u,initialFaults(),tick,transport,groupActivity(ues,tick,initialFaults(),transport),i)),transport)[selected][k];return <div key={k}><span>{k.toUpperCase()}</span><b>{base.toFixed(1)} → {current[k].toFixed(1)}</b></div>})}</div>}</section>
  </div><section className="panel charts"><div className="panelTitle split"><span><Activity size={16}/> Key Performance Indicators · {ues[selected].id}</span><button className="textBtn" onClick={download}><Download size={14}/> CSV</button></div><div className="chartGrid"><ChartPanel title="SINR" data={history} field="sinr" color="#2c9eff" unit="dB"/><ChartPanel title="BLER" data={history} field="bler" color="#f05c58" unit="%"/><ChartPanel title="DL Throughput" data={history} field="throughput" color="#1fce8b" unit="Mbps"/><ChartPanel title="EU PRB Share" data={history} field="prb" color="#ae79ff" unit="%"/></div></section>
  <section className="panel alarmPanel"><div className="panelTitle"><AlertTriangle size={16}/> Alarms & Events</div><div className="eventList">{events.slice(0,7).map((e,i)=><div key={i}><span>{String(Math.floor(e.t/60)).padStart(2,'0')}:{String(e.t%60).padStart(2,'0')}</span><b className={e.level==='WARNING'?'warning':'info'}>{e.level}</b>{e.message}</div>)}</div></section></div><div className="networkRight"><section className="panel cellSummary"><div className="panelTitle"><BarChart3 size={16}/> Overall Network Performance</div>{networkCharts}<div className="networkSummaryFoot">9 small cells · 3 shared PRB pools · {ueCount} simulated UEs</div></section>
  <aside className="panel details"><div className="panelTitle"><Signal size={16}/> Selected UE</div><select value={selected} onChange={e=>setSelected(+e.target.value)}>{ues.map((u,i)=><option key={u.id} value={i}>{u.id}</option>)}</select><div className="status"><span className="dot"/> {current.serving<0?'DISCONNECTED':'CONNECTED'}</div>{[['Serving Small Cell',SITES[current.serving]?.id??'None'],['Logical Cell / PCI',current.servingGroup<0?'None':`${GROUPS[current.servingGroup].id} / ${GROUPS[current.servingGroup].pci}`],['Location',`${ues[selected].x}, ${ues[selected].y} m`],['RSRP',`${current.rsrp.toFixed(1)} dBm`],['SINR',`${current.sinr.toFixed(1)} dB`],['CQI',current.cqi],['MCS',current.mcs],['BLER',`${current.bler.toFixed(1)} %`],['UE PRB Share',`${current.prb.toFixed(1)} %`],['Logical Cell PRB Utilization',`${current.cellPrbUtil.toFixed(1)} %`],['DL Throughput',`${current.throughput.toFixed(1)} Mbps`]].map(([a,b])=><div className="metric" key={a}><span>{a}</span><b>{b}</b></div>)}<div className="panelTitle section">Individual Small-Cell Received Power</div>{current.powers.map((p,i)=><div className="metric" key={i}><span>{SITES[i].id}</span><b>{p< -180?'OFF':p.toFixed(1)+' dBm'}</b></div>)}</aside>
