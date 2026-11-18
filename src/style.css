@@ -318,3 +318,34 @@ main:not(.networkMain)>.networkLeft,main:not(.networkMain)>.networkRight,main:no
 .scTableWrap .scOnline{color:#008a65;font-weight:700}
 .scTableWrap .scOffline{color:#d22b3d;font-weight:700}
 .scTableNote{font-size:12px;color:#60738e;line-height:1.5;margin:14px 4px 4px}
+
+/* Expand SC Table to use available page width */
+main:has(.scTable) {
+  display: block !important;
+  width: 100%;
+}
+
+main:has(.scTable) > .networkLeft {
+  width: 100%;
+}
+
+main:has(.scTable) .networkTop {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 12px;
+}
+
+main:has(.scTable) .scTable {
+  width: 100%;
+  min-width: 0;
+}
+
+main:has(.scTable) .tableWrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+main:has(.scTable) .tableWrap table {
+  width: 100%;
+  min-width: 1050px;
+}
