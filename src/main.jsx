@@ -80,11 +80,24 @@ function allocateResources(raw,transport){
  return result;
 }
 function Equipment({src,label,subtitle,compact=false}){
- const [missing,setMissing]=useState(false);
- return <div className={'equipment '+(compact?'equipmentCompact':'')}>
-  <div className="equipmentVisual">{missing?<div className="equipmentFallback"><RadioTower size={compact?26:36}/></div>:<img src={src} alt={label} onError={()=>setMissing(true)}/>}</div>
-  <strong>{label}</strong>{subtitle&&<small>{subtitle}</small>}
- </div>;
+  const [missing,setMissing]=useState(false);
+
+  return <div className={'equipment '+(compact?'equipmentCompact':'')}>
+    <div className="equipmentVisual">
+      {!src || missing
+        ? <div className="equipmentFallback">
+            <RadioTower size={compact?26:36}/>
+          </div>
+        : <img
+            src={src}
+            alt={label}
+            onError={()=>setMissing(true)}
+          />
+      }
+    </div>
+    <strong>{label}</strong>
+    {subtitle&&<small>{subtitle}</small>}
+  </div>;
 }
 function TransportTopology({transport,setTransport,summary,all,faults}){
  const update=(key,value)=>setTransport(v=>({...v,[key]:value}));
