@@ -241,3 +241,27 @@ main > .topology {
     overflow: visible;
   }
 }
+
+/* v1.8: compact transport topology with CU and DU */
+.architectureHorizontal{padding:12px 10px}
+.architectureFlow{grid-template-columns:minmax(100px,135px) 28px minmax(620px,1fr);min-width:800px}
+.architectureShared{gap:0}
+.architectureShared>.equipment{padding:3px 2px}
+.architectureShared>.equipmentVisual{height:39px}
+.architectureShared>.equipmentVisual img{max-height:37px}
+.architectureShared>.equipmentFallback{height:35px}
+.architectureShared>.flowWire{height:12px;margin:2px auto}
+.architectureRows{grid-template-rows:repeat(3,minmax(135px,auto))}
+.architectureRow{grid-template-columns:minmax(90px,1fr) 16px minmax(90px,1fr) minmax(255px,2.5fr);padding:12px 5px 25px}
+.architectureRow>.equipment{min-height:75px;padding:4px 3px}
+.architectureRow>.equipment .equipmentVisual{height:43px}
+.architectureRow>.equipment .equipmentVisual img{max-height:41px}
+.smallCellNodes{gap:4px}
+.smallCellNode .equipment{min-height:70px;padding:3px 2px}
+.smallCellNode .equipmentVisual{height:36px}
+.smallCellNode .equipmentVisual img{max-height:34px}
+.smallCellWire{height:9px}
+.fanStem{width:12px}
+.equipment strong{font-size:11px}
+.equipment small{font-size:9px}
+.architectureRowStats{font-size:10px;bottom:5px}
